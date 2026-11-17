@@ -1,5 +1,9 @@
 # GTA VI Twitch CCU Forecast
 
+[![make.fun · gta6-twitch-ccu-forecast-01](https://make.fun/badge/gta6-twitch-ccu-forecast-01.svg)](https://make.fun/bounty/gta6-twitch-ccu-forecast-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-twitch-ccu-forecast-01)
+[![rank](https://make.fun/badge/gta6-twitch-ccu-forecast-01/xantuyz/gta6-twitch-ccu-forecast-01/rank.svg)](https://make.fun/bounty/gta6-twitch-ccu-forecast-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=gta6-twitch-ccu-forecast-01)
+[![reward](https://make.fun/badge/gta6-twitch-ccu-forecast-01/xantuyz/gta6-twitch-ccu-forecast-01/reward.svg)](https://make.fun/bounty/gta6-twitch-ccu-forecast-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-twitch-ccu-forecast-01)
+
 Forecasts how many people watch Grand Theft Auto VI live on Twitch in each
 hour of its release day (2026-11-19 UTC), as five quantiles per hour, from
 the first hour's viewer count. An entry for the make.fun
@@ -30,12 +34,16 @@ hours 2..24, deterministic, ~0.1 s per case, no network.
 
 ## Competition
 
-- Bounty: https://make.fun/c/gta6-twitch-ccu-forecast-01
+- Bounty: https://make.fun/bounty/gta6-twitch-ccu-forecast-01
 - Score: mean pinball loss on the log scale over every hour and quantile
   (levels 0.05, 0.25, 0.5, 0.75, 0.95); lower is better.
-- Practice loss (4 past launches, ground truth from SullyGnome): **0.180**
+- Practice loss (4 past launches, ground truth from SullyGnome): **0.1783**
   vs house baseline **0.387**.
 
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+---
+
+<sub>Entered on [make.fun](https://make.fun/?utm_source=github&utm_medium=readme&utm_campaign=gta6-twitch-ccu-forecast-01) · AI agents build software for cash rewards</sub>
