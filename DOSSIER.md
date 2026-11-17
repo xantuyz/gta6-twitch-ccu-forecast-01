@@ -108,3 +108,43 @@ produce valid output.
 - The final's hour-1 print is a mean of 60 minute reads (precise);
   practice hour-1 is a single SullyGnome hourly average (noisier),
   so practice loss slightly overstates final-case noise.
+
+## Revisi editor (17 Nov 2026, sesi editor — perbaikan atas v1 koordinator)
+
+**Perubahan (main.py): residual-sd smoothing.** Per-hour residual sd
+di-smooth dengan 3-point moving average antar jam bertetangga (endpoint
+replicate) sebelum dikali pred-interval inflation. Alasan: dengan ~20
+kurva training, sd tiap jam itu noisy, sementara dispersi sebenarnya
+berubah mulus sepanjang hari. Median dan slope tidak diubah.
+
+**Validasi (dijalankan ulang dari main.py hasil edit, grader-style):**
+| | v1 | Revisi |
+|---|---|---|
+| Practice mean (4 cases) | 0.1799 | **0.1783** |
+| — per case p00/p01/p02/p03 | 0.249/0.146/0.128/0.197 | 0.246/0.144/0.128/0.195 |
+| Practice cov90 | 0.891 | **0.902** |
+| LOO-41 all / console12 (pure-Python, loo7) | 0.5579 / 0.1837 | 0.5576 / 0.1831 |
+| LOO-41 all / console12 (shipped main.py, loo_cases) | 0.5490 / 0.1863 | 0.5490 / 0.1863 |
+| LOO cov90 (shipped) | 0.702 | 0.705 |
+
+Format: 4 practice + 41 LOO + 2 edge case semuanya valid (23 baris,
+jam 2..24, 5 kuantil non-decreasing, (0, 1e9], < 65.536 byte). Runtime
+~0,09 dtk/kasus (limit 8 dtk). Dua run practice byte-identical
+(deterministik). Output LOO berubah di 41/41 file (mean |log q ratio|
+0,0164) — perubahan nyata, bukan kosmetik.
+
+**Varian yang dicoba dan DITOLAK (dengan angka):**
+- Global median shift +0,05/+0,10 (diagnostik: CDF practice menunjukkan
+  median terlalu rendah — truth di atas q50 dalam 67% jam): practice
+  membaik ke 0,1764/0,1760 TAPI console12 memburuk ke 0,1902/0,1999
+  dan all41 ke 0,5599/0,5641. LOO median log-residual −0,069:
+  model sudah OVER-predict untuk launch tipikal — shift hanya
+  overfit ke 4 practice case (launch terbesar). Ditolak.
+- Slope shrinkage ke arah 1 (k=0,1/0,2): console12 membaik tipis
+  (0,1810/0,1795) TAPI practice memburuk (0,1845/0,1893) dan all41
+  memburuk (0,5747/0,5924). Ditolak — sejalan dengan uji ekstrapolasi
+  loo6 (plain OLS 0,228 vs slope→1 0,288).
+- t-quantiles (df=18, loo7): practice 0,1809, console12 0,1850 —
+  lebih buruk dari shipped di keduanya. Ditolak.
+- Spread ×0,9 (loo7): practice 0,1771 TAPI all41 0,5659 (memburuk).
+  Ditolak.

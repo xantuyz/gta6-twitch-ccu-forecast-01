@@ -8,7 +8,9 @@ Model (per forecast hour h, fitted at runtime from the case's comparables):
   log viewers(h) = a_h + b_h * log viewers(1)          (ordinary least squares)
   median(h)      = exp(a_h + b_h * log p1)
   q_tau(h)       = exp(median_log(h) + z_tau * sd_h * infl_h)
-where sd_h is the regression residual sd and infl_h =
+where sd_h is the regression residual sd (smoothed across neighbouring hours:
+3-point moving average, endpoints replicate — each hour's sd is noisy with
+~20 training curves) and infl_h =
 sqrt(1 + 1/n + (log p1 - mean log p1)^2 / Sxx) is the standard
 prediction-interval inflation (slope/intercept uncertainty + extrapolation:
 GTA VI's hour-1 print is expected at or above the largest training launch).
@@ -141,7 +143,9 @@ def forecast_case(case: dict, name: str) -> dict:
         return {"hours": [{"hour": row["hour"], "q": _persistence(p1, row["hour"])}
                          for row in case["forecast"]]}
 
-    hours = []
+    # First pass: per-hour OLS fit (median log, residual sd, pred-interval
+    # inflation).
+    fit = {}
     for row in case["forecast"]:
         h = row["hour"]
         xs = [math.log(m[1]) for _, m in train]
@@ -149,8 +153,21 @@ def forecast_case(case: dict, name: str) -> dict:
         a, b, sd, mx, sxx = _ols(xs, ys)
         n = len(xs)
         infl = math.sqrt(1.0 + 1.0 / n + (lv1 - mx) ** 2 / sxx) if sxx > 0 else 1.0
-        mu = a + b * lv1
-        spread = sd * infl
+        fit[h] = (a + b * lv1, sd, infl)
+    # Smooth the residual sd across neighbouring hours (3-point moving
+    # average, endpoints replicate): with ~20 training curves each hour's
+    # sd is noisy, while the true dispersion changes smoothly over the day.
+    # Measured on LOO-41 + practice4: all 0.5579 -> 0.5576, console12
+    # 0.1837 -> 0.1831, practice4 0.1799 -> 0.1783, cov90 0.725 -> 0.731.
+    hours = sorted(fit)
+    sd_sm = {}
+    for h in hours:
+        vals = [fit[max(hours[0], min(hours[-1], hh))][1] for hh in (h - 1, h, h + 1)]
+        sd_sm[h] = sum(vals) / len(vals)
+    out_hours = []
+    for h in hours:
+        mu, _sd, infl = fit[h]
+        spread = sd_sm[h] * infl
         qs = []
         prev = 0.0
         for z in Z:
@@ -161,8 +178,8 @@ def forecast_case(case: dict, name: str) -> dict:
                 q = prev
             qs.append(q)
             prev = q
-        hours.append({"hour": h, "q": qs})
-    return {"hours": hours}
+        out_hours.append({"hour": h, "q": qs})
+    return {"hours": out_hours}
 
 
 def main() -> None:
